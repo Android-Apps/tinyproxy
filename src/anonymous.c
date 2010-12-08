@@ -39,8 +39,6 @@ short int is_anonymous_enabled (void)
  */
 int anonymous_search (const char *s)
 {
-        assert (s != NULL);
-        assert (config.anonymous_map != NULL);
 
         return hashmap_search (config.anonymous_map, s);
 }
@@ -55,7 +53,6 @@ int anonymous_insert (const char *s)
 {
         char data = 1;
 
-        assert (s != NULL);
 
         if (!config.anonymous_map) {
                 config.anonymous_map = hashmap_create (32);

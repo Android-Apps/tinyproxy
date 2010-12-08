@@ -121,12 +121,12 @@ void filter_init (void)
                         fprintf (stderr,
                                  "Bad regex in %s: %s\n",
                                  config.filter, p->pat);
-                        exit (EX_DATAERR);
+                        exit (0);
                 }
         }
         if (ferror (fd)) {
                 perror ("fgets");
-                exit (EX_DATAERR);
+                exit (0);
         }
         fclose (fd);
 

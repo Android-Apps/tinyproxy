@@ -228,11 +228,11 @@ process_cmdline (int argc, char **argv, struct config_s *conf)
                 switch (opt) {
                 case 'v':
                         display_version ();
-                        exit (EX_OK);
+                        exit (0);
 
                 case 'l':
                         display_license ();
-                        exit (EX_OK);
+                        exit (0);
 
                 case 'd':
                         conf->godaemon = FALSE;
@@ -247,17 +247,17 @@ process_cmdline (int argc, char **argv, struct config_s *conf)
                                 fprintf (stderr,
                                          "%s: Could not allocate memory.\n",
                                          argv[0]);
-                                exit (EX_SOFTWARE);
+                        exit (0);
                         }
                         break;
 
                 case 'h':
                         display_usage ();
-                        exit (EX_OK);
+                        exit (0);
 
                 default:
                         display_usage ();
-                        exit (EX_USAGE);
+                        exit (0);
                 }
         }
 }
@@ -283,7 +283,7 @@ change_user (const char *program)
                                 fprintf (stderr,
                                          "%s: Unable to find group \"%s\".\n",
                                          program, config.group);
-                                exit (EX_NOUSER);
+                                exit (0);
                         }
 
                         gid = thisgroup->gr_gid;
@@ -293,7 +293,7 @@ change_user (const char *program)
                         fprintf (stderr,
                                  "%s: Unable to change to group \"%s\".\n",
                                  program, config.group);
-                        exit (EX_NOPERM);
+                        exit (0);
                 }
 
                 log_message (LOG_INFO, "Now running as group \"%s\".",
@@ -310,7 +310,7 @@ change_user (const char *program)
                                 fprintf (stderr,
                                          "%s: Unable to find user \"%s\".\n",
                                          program, config.user);
-                                exit (EX_NOUSER);
+                                exit (0);
                         }
 
                         uid = thisuser->pw_uid;
@@ -320,7 +320,7 @@ change_user (const char *program)
                         fprintf (stderr,
                                  "%s: Unable to change to user \"%s\".\n",
                                  program, config.user);
-                        exit (EX_NOPERM);
+                        exit (0);
                 }
 
                 log_message (LOG_INFO, "Now running as user \"%s\".",
@@ -332,10 +332,10 @@ static void initialize_config_defaults (struct config_s *conf)
 {
         memset (conf, 0, sizeof(*conf));
 
-        conf->config_file = safestrdup (SYSCONFDIR "/tinyproxy.conf");
+        conf->config_file = safestrdup ("/system/etc/tinyproxy.conf");
         if (!conf->config_file) {
                 fprintf (stderr, PACKAGE ": Could not allocate memory.\n");
-                exit (EX_SOFTWARE);
+                exit (0);
         }
         conf->godaemon = TRUE;
         /*
@@ -345,8 +345,8 @@ static void initialize_config_defaults (struct config_s *conf)
         conf->errorpages = NULL;
         conf->stathost = safestrdup (TINYPROXY_STATHOST);
         conf->idletimeout = MAX_IDLE_TIME;
-        conf->logf_name = safestrdup (LOCALSTATEDIR "/log/tinyproxy/tinyproxy.log");
-        conf->pidpath = safestrdup (LOCALSTATEDIR "/run/tinyproxy/tinyproxy.pid");
+        conf->logf_name = safestrdup ("/data/tinyproxy/tinyproxy.log");
+        conf->pidpath = safestrdup ("/data/tinyproxy/tinyproxy.pid");
 }
 
 /**
@@ -382,7 +382,7 @@ main (int argc, char **argv)
         log_message (LOG_INFO, "Initializing " PACKAGE " ...");
 
         if (config_compile_regex()) {
-                exit (EX_SOFTWARE);
+                exit (0);
         }
 
         initialize_config_defaults (&config_defaults);
@@ -391,7 +391,7 @@ main (int argc, char **argv)
         if (reload_config_file (config_defaults.config_file,
                                 &config,
                                 &config_defaults)) {
-                exit (EX_SOFTWARE);
+                exit (0);
         }
 
         init_stats ();
@@ -411,7 +411,7 @@ main (int argc, char **argv)
         if (set_signal_handler (SIGPIPE, SIG_IGN) == SIG_ERR) {
                 fprintf (stderr, "%s: Could not set the \"SIGPIPE\" signal.\n",
                          argv[0]);
-                exit (EX_OSERR);
+                exit (0);
         }
 
 #ifdef FILTER_ENABLE
@@ -423,7 +423,7 @@ main (int argc, char **argv)
         if (child_listening_sock (config.port) < 0) {
                 fprintf (stderr, "%s: Could not create listening socket.\n",
                          argv[0]);
-                exit (EX_OSERR);
+                exit (0);
         }
 
         /* Switch to a different user if we're running as root */
@@ -435,7 +435,7 @@ main (int argc, char **argv)
 
         /* Create log file after we drop privileges */
         if (setup_logging ()) {
-                exit (EX_SOFTWARE);
+                exit (0);
         }
 
         /* Create pid file after we drop privileges */
@@ -443,7 +443,7 @@ main (int argc, char **argv)
                 if (pidfile_create (config.pidpath) < 0) {
                         fprintf (stderr, "%s: Could not create PID file.\n",
                                  argv[0]);
-                        exit (EX_OSERR);
+                        exit (0);
                 }
         }
 
@@ -451,7 +451,7 @@ main (int argc, char **argv)
                 fprintf (stderr,
                          "%s: Could not create the pool of children.\n",
                          argv[0]);
-                exit (EX_SOFTWARE);
+                exit (0);
         }
 
         /* These signals are only for the parent process. */
@@ -460,19 +460,19 @@ main (int argc, char **argv)
         if (set_signal_handler (SIGCHLD, takesig) == SIG_ERR) {
                 fprintf (stderr, "%s: Could not set the \"SIGCHLD\" signal.\n",
                          argv[0]);
-                exit (EX_OSERR);
+                exit (0);
         }
 
         if (set_signal_handler (SIGTERM, takesig) == SIG_ERR) {
                 fprintf (stderr, "%s: Could not set the \"SIGTERM\" signal.\n",
                          argv[0]);
-                exit (EX_OSERR);
+                exit (0);
         }
 
         if (set_signal_handler (SIGHUP, takesig) == SIG_ERR) {
                 fprintf (stderr, "%s: Could not set the \"SIGHUP\" signal.\n",
                          argv[0]);
-                exit (EX_OSERR);
+                exit (0);
         }
 
         /* Start the main loop */
