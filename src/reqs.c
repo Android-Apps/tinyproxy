@@ -167,10 +167,16 @@ static void strip_username_password (char *host)
 static int strip_return_port (char *host)
 {
         char *ptr1;
+        char *ptr2;
         int port;
 
-        ptr1 = strchr (host, ':');
+        ptr1 = strrchr (host, ':');
         if (ptr1 == NULL)
+                return 0;
+
+        /* Check for IPv6 style literals */
+        ptr2 = strchr (ptr1, ']');
+        if (ptr2 != NULL)
                 return 0;
 
         *ptr1++ = '\0';
@@ -211,6 +217,13 @@ static int extract_http_url (const char *url, struct request_s *request)
         /* Find a proper port in www.site.com:8001 URLs */
         port = strip_return_port (request->host);
         request->port = (port != 0) ? port : HTTP_PORT;
+
+        /* Remove any surrounding '[' and ']' from IPv6 literals */
+        p = strrchr (request->host, ']');
+        if (p && (*(request->host) == '[')) {
+                request->host++;
+                *p = '\0';
+        }
 
         return 0;
 
@@ -255,6 +268,7 @@ static int
 establish_http_connection (struct conn_s *connptr, struct request_s *request)
 {
         char portbuff[7];
+        char dst[sizeof(struct in6_addr)];
 
         /* Build a port string if it's not a standard port */
         if (request->port != HTTP_PORT && request->port != HTTP_PORT_SSL)
@@ -262,12 +276,23 @@ establish_http_connection (struct conn_s *connptr, struct request_s *request)
         else
                 portbuff[0] = '\0';
 
-        return write_message (connptr->server_fd,
-                              "%s %s HTTP/1.0\r\n"
-                              "Host: %s%s\r\n"
-                              "Connection: close\r\n",
-                              request->method, request->path,
-                              request->host, portbuff);
+        if (inet_pton(AF_INET6, request->host, dst) > 0) {
+                /* host is an IPv6 address literal, so surround it with
+                 * [] */
+                return write_message (connptr->server_fd,
+                                      "%s %s HTTP/1.0\r\n"
+                                      "Host: [%s]%s\r\n"
+                                      "Connection: close\r\n",
+                                      request->method, request->path,
+                                      request->host, portbuff);
+        } else {
+                return write_message (connptr->server_fd,
+                                      "%s %s HTTP/1.0\r\n"
+                                      "Host: %s%s\r\n"
+                                      "Connection: close\r\n",
+                                      request->method, request->path,
+                                      request->host, portbuff);
+        }
 }
 
 /*
@@ -418,7 +443,7 @@ BAD_REQUEST_ERROR:
         } else {
 #ifdef TRANSPARENT_PROXY
                 if (!do_transparent_proxy
-                    (connptr, hashofheaders, request, &config, url)) {
+                    (connptr, hashofheaders, request, &config, &url)) {
                         goto fail;
                 }
 #else
