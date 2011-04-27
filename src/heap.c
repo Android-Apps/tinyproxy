@@ -109,7 +109,7 @@ void *malloc_shared_memory (size_t size)
 {
         int fd;
         void *ptr;
-        char buffer[32];
+        char buffer[62];
 
         static const char *shared_file = "/data/tinyproxy/tinyproxy.shared.XXXXXX";
 

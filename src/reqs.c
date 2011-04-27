@@ -79,6 +79,42 @@
 #define CHECK_LWS(header, len)                                  \
   ((len) > 0 && (header[0] == ' ' || header[0] == '\t'))
 
+static const char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static void encode_base_64(char* src, char* dest, int max_len) {
+    int n, l, i;
+    l = strlen(src);
+    max_len = (max_len - 1) / 4;
+    for (i = 0; i < max_len; i++, src += 3, l -= 3) {
+        switch (l) {
+            case 0:
+                break;
+            case 1:
+                n = src[0] << 16;
+                *dest++ = base64[(n >> 18) & 077];
+                *dest++ = base64[(n >> 12) & 077];
+                *dest++ = '=';
+                *dest++ = '=';
+                break;
+            case 2:
+                n = src[0] << 16 | src[1] << 8;
+                *dest++ = base64[(n >> 18) & 077];
+                *dest++ = base64[(n >> 12) & 077];
+                *dest++ = base64[(n >> 6) & 077];
+                *dest++ = '=';
+                break;
+            default:
+                n = src[0] << 16 | src[1] << 8 | src[2];
+                *dest++ = base64[(n >> 18) & 077];
+                *dest++ = base64[(n >> 12) & 077];
+                *dest++ = base64[(n >> 6) & 077];
+                *dest++ = base64[n & 077];
+        }
+        if (l < 3) break;
+    }
+    *dest++ = 0;
+}
+
 /*
  * Read in the first line from the client (the request line for HTTP
  * connections. The request line is allocated from the heap, but it must
@@ -286,12 +322,25 @@ establish_http_connection (struct conn_s *connptr, struct request_s *request)
                                       request->method, request->path,
                                       request->host, portbuff);
         } else {
+                char proxy_auth[200] = "";
+                if (connptr->upstream_proxy != NULL && connptr->upstream_proxy->user)
+                {
+                        char src[256];
+                        char dst2[512];
+                        strcpy(src, connptr->upstream_proxy->user);
+                        strcat(src, ":");
+                        strcat(src, connptr->upstream_proxy->pwd);
+                        encode_base_64(src, dst2, 512);
+                        strcat(proxy_auth, "Proxy-Authorization: Basic ");
+                        strcat(proxy_auth, dst2);
+                }
                 return write_message (connptr->server_fd,
                                       "%s %s HTTP/1.0\r\n"
                                       "Host: %s%s\r\n"
-                                      "Connection: close\r\n",
+                                      "Connection: close\r\n" \
+                                      "%s\r\n\r\n",
                                       request->method, request->path,
-                                      request->host, portbuff);
+                                      request->host, portbuff, proxy_auth);
         }
 }
 
