@@ -23,8 +23,8 @@ AC_INIT([Tinyproxy], [tinyproxy_version],
 	[tinyproxy])
 
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE([foreign dist-bzip2])
-AM_CONFIG_HEADER(config.h)
+AM_INIT_AUTOMAKE([foreign dist-bzip2 dist-xz])
+AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_MACRO_DIR([m4macros])
 
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
@@ -222,7 +222,7 @@ if test x"$debug_enabled" != x"yes" ; then
     CFLAGS="-DNDEBUG $CFLAGS"
 fi
 
-LDFLAGS="-Wl,-z,defs"
+LDFLAGS="-Wl,-z,defs $LDFLAGS"
 
 dnl
 dnl Make sure we can actually handle the "--with-*" and "--enable-*" stuff.
