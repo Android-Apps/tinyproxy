@@ -233,7 +233,7 @@
 #define PACKAGE_VERSION "1.9.0"
 
 /* Include support for reverse proxy. */
-/* #undef REVERSE_SUPPORT */
+#define REVERSE_SUPPORT
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
@@ -251,7 +251,7 @@
 #define TINYPROXY_VERSION "1.9.0"
 
 /* Include support for using tinyproxy as a transparent proxy. */
-/* #undef TRANSPARENT_PROXY */
+#define TRANSPARENT_PROXY
 
 /* Include support for connecting to an upstream proxy. */
 #define UPSTREAM_SUPPORT 1

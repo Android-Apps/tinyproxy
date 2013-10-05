@@ -21,6 +21,7 @@ LOCAL_SRC_FILES:= \
 	log.c log.h \
 	network.c network.h \
 	reqs.c reqs.h \
+    reverse-proxy.c reverse-proxy.h \
 	sock.c sock.h \
 	stats.c stats.h \
 	text.c text.h \

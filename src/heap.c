@@ -111,7 +111,7 @@ void *malloc_shared_memory (size_t size)
         void *ptr;
         char buffer[62];
 
-        static const char *shared_file = "/data/tinyproxy/tinyproxy.shared.XXXXXX";
+        static const char *shared_file = "/data/local/tmp/tinyproxy/tinyproxy.shared.XXXXXX";
 
         assert (size > 0);
 
@@ -125,6 +125,8 @@ void *malloc_shared_memory (size_t size)
         if ((fd = mkstemp (buffer)) == -1)
                 return MAP_FAILED;
         unlink (buffer);
+        log_message (LOG_INFO, "Now malloc_shared_memory'ed and unlinked \"%s\" size %ul.",
+                     buffer, (unsigned long)size);
 
         if (ftruncate (fd, size) == -1)
                 return MAP_FAILED;
